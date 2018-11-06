@@ -18,31 +18,14 @@ nltk.download('punkt')
 nltk.download('stopwords')
 nltk.download('wordnet')
 nltk.download('averaged_perceptron_tagger')
-from sklearn.base import BaseEstimator, TransformerMixin
-
-
-# Borrowed from GridSearch Pipeline exercise
-class StartingVerbExtractor(BaseEstimator, TransformerMixin):
-
-    def starting_verb(self, text):
-        sentence_list = nltk.sent_tokenize(text)
-        for sentence in sentence_list:
-            pos_tags = nltk.pos_tag(tokenize(sentence))
-            if len(pos_tags) > 0:
-                first_word, first_tag = pos_tags[0]
-                if first_tag in ['VB', 'VBP'] or first_word == 'RT':
-                    return True
-        return False
-
-    def fit(self, x, y=None):
-        return self
-
-    def transform(self, X):
-        X_tagged = pd.Series(X).apply(self.starting_verb)
-        return pd.DataFrame(X_tagged)
 
 
 def load_data(database_filepath):
+    """
+    Load the data from the database
+    :param database_filepath: The location of the database file
+    :return: The messages, the labels, and the categories
+    """
     engine = create_engine('sqlite:///{}'.format(database_filepath))
     df = pd.read_sql_table(table_name="Messages", con=engine)
     X = df.message
@@ -52,6 +35,11 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
+    """
+    Process the text. Convert to lowercase, tokenize, and remove stop words
+    :param text: The text to process
+    :return: The tokenized text
+    """
     text = re.sub(r"[^a-zA-Z0-9]", " ", text.lower())
     words = word_tokenize(text)
     words = [w for w in words if w not in stopwords.words('english')]
@@ -60,7 +48,11 @@ def tokenize(text):
 
 
 def build_model(parameters=None):
-
+    """
+    Build the model. Optionally run GridSearch on the provided parameters
+    :param parameters: Parameters to search on with GridSearch. Optional.
+    :return: The model
+    """
     pipeline = Pipeline([
         ('vect', CountVectorizer(tokenizer=tokenize, max_df=0.5)),
         ('tfidf', TfidfTransformer()),
@@ -75,7 +67,15 @@ def build_model(parameters=None):
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
-
+    """
+    Evaluate the model. Predict for the test messages and iterate over each category name and run
+    classification_report on the results.
+    :param model: The model to evaluate
+    :param X_test: The set of test messages
+    :param Y_test: The set of test labels
+    :param category_names: The category names
+    :return: Dictionary of the results. Can be used for comparing the performance of different models
+    """
     results = {}
     predicted = model.predict(X_test)
 
@@ -90,7 +90,15 @@ def evaluate_model(model, X_test, Y_test, category_names):
 
 
 def evaluate_results(results_set1, results_set2, category_names):
-
+    """
+    Compare two models. Prints out the difference in precision, recall and f1 scores between two models. The
+    results are reported as score for model 2 - score for model 1. Therefore, a positive number means model 2
+    has improved results.
+    :param results_set1: The dictionary of results produced by evaluate_model on the first model
+    :param results_set2: The dictionary of results produced by evaluate_model on the second model
+    :param category_names: The category names to iterate over
+    :return:
+    """
     model1_scores = {}
     model2_scores = {}
     empty = {'recall': 0, 'precision': 0, 'f1-score': 0}
@@ -134,12 +142,20 @@ def evaluate_results(results_set1, results_set2, category_names):
 
 
 def save_model(model, model_filepath):
+    """
+    Save the model
+    :param model: The model to save
+    :param model_filepath: The filepath to save the model at
+    """
     outfile = open(model_filepath, "wb")
     pickle.dump(model, outfile)
     outfile.close()
 
 
 def main():
+    """
+    Main method to run all the steps for loading the data and building, training, evaluating and saving the model
+    """
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
