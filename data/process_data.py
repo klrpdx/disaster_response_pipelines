@@ -2,7 +2,14 @@ import sys
 import pandas as pd
 from sqlalchemy import create_engine
 
+
 def load_data(messages_filepath, categories_filepath):
+    """
+    Load data for messages and categories
+    :param messages_filepath: The path for the file containing messages data
+    :param categories_filepath: The path for the file containing categories data
+    :return: A dataframe build by merging the two data sources
+    """
     messages = pd.read_csv(messages_filepath)
     categories = pd.read_csv(categories_filepath)
     df = pd.merge(messages, categories, on='id')
@@ -10,11 +17,16 @@ def load_data(messages_filepath, categories_filepath):
 
 
 def clean_data(df):
+    """
+    Clean the data: create meaningful feature names from the ';' separated fields
+    :param df: The dataframe to clean
+    :return: The cleaned dataframe
+    """
     categories = df.categories.str.split(pat=';',expand=True)
     row = categories.iloc[0]
     category_colnames = row.apply(lambda x: x[:-2])
     categories.columns = category_colnames
-    categories.related =  categories[['related']].replace(to_replace='related-2', value='related-1')
+    categories.related = categories[['related']].replace(to_replace='related-2', value='related-1')
 
     for column in categories:
         # set each value to be the last character of the string
@@ -30,11 +42,19 @@ def clean_data(df):
 
 
 def save_data(df, database_filename):
+    """
+    Save dataframe to database
+    :param df: The dataframe
+    :param database_filename: The file location of the database
+    """
     engine = create_engine('sqlite:///{}'.format(database_filename))
     df.to_sql('Messages', engine, index=False, if_exists="replace")
 
 
 def main():
+    """
+    Parse the input params, load the data, clean the dataframe, and save it to the database
+    """
     if len(sys.argv) == 4:
 
         messages_filepath, categories_filepath, database_filepath = sys.argv[1:]
