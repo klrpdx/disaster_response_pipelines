@@ -4,6 +4,10 @@ A machine learning pipeline that injests social media messages related to natura
 to classify these messages according to subject, urgency, and need. The trained model is hosted via a Flask web app that
 allows the user to enter messages and see how they are classified.
 
+In actual use, the model would be imbedded in a pipeline processing live messages coming off social media sources
+and would help with classifying those messages that are most important so that emergency personnel can read only the
+most pertinent and urgent.
+
 ### What's inside:
 -  Example data files:
     -  disaster_messages.csv: Archive of messages from natural disasters
